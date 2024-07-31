@@ -1,5 +1,5 @@
 // Source: https://stackoverflow.com/a/61511955
-async function waitForElement(selector) {
+const waitForElement = async (selector) => {
     return new Promise(resolve => {
         if (document.querySelector(selector)) {
             return resolve(document.querySelector(selector));
@@ -20,20 +20,47 @@ async function waitForElement(selector) {
     });
 }
 
-async function observeHiddenInputValue(element, callback) {
+const waitForChild = async (parent, selector) => {
+    return new Promise(resolve => {
+        // Determine if parent is a selector string or a DOM element
+        const parentElement = typeof parent === 'string' ? document.querySelector(parent) : parent;
+
+        if (!parentElement) {
+            throw new Error('Parent element not found');
+        }
+
+        if (parentElement.querySelector(selector)) {
+            return resolve(parentElement.querySelector(selector));
+        }
+
+        const observer = new MutationObserver(() => {
+            if (parentElement.querySelector(selector)) {
+                observer.disconnect();
+                resolve(parentElement.querySelector(selector));
+            }
+        });
+
+        observer.observe(parentElement, {
+            childList: true,
+            subtree: true
+        });
+    });
+};
+
+const observeHiddenInputValue = async (element, callback) => {
     return new Promise((resolve, reject) => {
         const observer = new MutationObserver((mutationsList) => {
-          for (let mutation of mutationsList) {
-            if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
-              callback(element.value);
+            for (let mutation of mutationsList) {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+                    callback(element.value);
+                }
             }
-          }
         });
-    
+
         const config = { attributes: true, attributeFilter: ['value'] };
-    
+
         observer.observe(element, config);
-    
+
         resolve(observer);
     });
 }
